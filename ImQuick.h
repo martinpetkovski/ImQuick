@@ -76,6 +76,7 @@ namespace ImQuick
 		std::unordered_map<std::type_index, std::function<void(const char*, void*)>> mTypeRenderFunctionMap;
 		std::unordered_map<std::string, SImQuickProperty> mPropertyMap;
 		std::vector<SImQuickWindow> mWindowsMap;
+		std::vector<void*> mVariablePool;
 		bool mIsRenderMainMenu = true;
 
 		SImQuickContext() {}
@@ -90,6 +91,12 @@ namespace ImQuick
 
 	inline void DestroyContext()
 	{
+		IM_ASSERT(gImQuickContext);
+		for (const auto& var : gImQuickContext->mVariablePool)
+		{
+			delete var;
+		}
+
 		IM_FREE(gImQuickContext);
 	}
 
@@ -172,32 +179,60 @@ namespace ImQuick
 	}
 
 	template<typename T>
-	void RegisterParameter(
+	void RegisterProperty(
 		const std::string& name,
 		T* param,
 		const std::string& wndName = IMQ_DEFAULT_WND_NAME)
 	{
 		IM_ASSERT(gImQuickContext);
 
-		SImQuickProperty typeParameter;
-		typeParameter.paramType = std::type_index(typeid(*param));
-		typeParameter.param = param;
+		SImQuickProperty typeProperty;
+		typeProperty.paramType = std::type_index(typeid(*param));
+		typeProperty.param = param;
 
 		auto wndIt = GetWindow(wndName);
 		if (wndIt)
 		{
-			typeParameter.wnd = wndIt;
+			typeProperty.wnd = wndIt;
 		}
 		else
 		{
 			InitializeWindow(wndName);
-			typeParameter.wnd = GetWindow(wndName);
+			typeProperty.wnd = GetWindow(wndName);
 		}
 
-		gImQuickContext->mPropertyMap.insert_or_assign(name, typeParameter);
+		gImQuickContext->mPropertyMap.insert_or_assign(name, typeProperty);
 	}
 
-	inline void RemoveParameter(const std::string& name)
+	template<typename T>
+	void RegisterProperty(
+		const std::string& name,
+		const std::string& wndName = IMQ_DEFAULT_WND_NAME)
+	{
+		IM_ASSERT(gImQuickContext);
+
+		T* param = new T();
+		gImQuickContext->mVariablePool.push_back(param);
+
+		SImQuickProperty typeProperty;
+		typeProperty.paramType = std::type_index(typeid(*param));
+		typeProperty.param = param;
+
+		auto wndIt = GetWindow(wndName);
+		if (wndIt)
+		{
+			typeProperty.wnd = wndIt;
+		}
+		else
+		{
+			InitializeWindow(wndName);
+			typeProperty.wnd = GetWindow(wndName);
+		}
+
+		gImQuickContext->mPropertyMap.insert_or_assign(name, typeProperty);
+	}
+
+	inline void RemoveProperty(const std::string& name)
 	{
 		IM_ASSERT(gImQuickContext);
 
@@ -205,18 +240,18 @@ namespace ImQuick
 	}
 
 	template<typename T>
-	void UpdateParameter(
+	void UpdateProperty(
 		const std::string& name,
 		const std::string& newName,
 		T* param,
 		const std::string& wndName = IMQ_DEFAULT_WND_NAME)
 	{
-		RemoveParameter(name);
-		RegisterParameter<T>(newName, param, wndName);
+		RemoveProperty(name);
+		RegisterProperty<T>(newName, param, wndName);
 	}
 
 	template<typename T>
-	T* GetParameter(const std::string& name)
+	T* GetProperty(const std::string& name)
 	{
 		IM_ASSERT(gImQuickContext);
 		T* retVal = nullptr;
@@ -227,6 +262,15 @@ namespace ImQuick
 		}
 
 		return retVal;
+	}
+
+	template<typename T>
+	T* SetProperty(const std::string& name, const T& value)
+	{
+		const auto& param = GetProperty<T>(name);
+		IM_ASSERT(param)
+		
+		*param = T(value);
 	}
 
 	inline void Render()
