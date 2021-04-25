@@ -28,9 +28,9 @@ Let's say you have a class named Character which you want to render inside the M
 class CCharacter
 {
   public:
-    int age;
-    float stamina;
-    double skill;
+    int age = 0;
+    float stamina = 0.0f;
+    double skill = 0.0;
 }
 ```
 
