@@ -19,3 +19,41 @@ Single header ImGui extension library for clearer separation of interface from l
 6. Call `ImQuick::DestroyContext()` before calling `ImGui::DestroyContext()`.
 ### Inside the Render loop
 1. Call `ImQuick::Render()` **before** calling `ImGui::Render()`.
+
+# Use case
+Let's say you have a class named Character which you want to render inside the Main Window. The character class looks something like:
+```
+class CCharacter
+{
+  public:
+    int age;
+    float stamina;
+    double skill;
+}
+```
+
+First, you need to write a rendering function for the class which would look something like:
+```
+void Render_TypeCharacter(const char* label, void* value)
+{
+  IMQ_STATIC_CAST(CCharacter, value, character);
+  ImGui::InputInt("Age", &character->age);
+  ImGui::InputFloat("Stamina", &character->stamina);
+  ImGui::InputDouble("Skill", &character->skill);
+}
+```
+
+Then, you register the render function with ImQuick like so:
+```
+  ImQuick::RegisterFunction<CCharacter>(std::bind(&Render_TypeCharacter, std::placeholders::_1, std::placeholders::_2));
+
+```
+
+Finally, you register the character property you want rendered like so:
+```
+  CCharacter cJohn;
+  ImQuick::RegisterProperty<CCharacter>("John", &cJohn, "John", "Main Window");
+```
+
+# License 
+ImQuick is licensed under the MIT license, see License.txt for more information. 
