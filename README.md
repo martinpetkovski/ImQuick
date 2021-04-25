@@ -1,5 +1,5 @@
 # ImQuick
-Single header ImGui extension library for clearer separation of interface from logic. ImQuick renders ImGui UI elements automagically based only on the variable type. 
+ImQuick is a single header ImGui extension library for clearer separation of interface from logic. ImQuick renders ImGui UI elements automagically based only on the variable type. 
 
 ImQuick requires [ImGui](https://github.com/ocornut/imgui) and C++11.
 
