@@ -112,6 +112,8 @@ namespace ImQuick
 
 	inline void Initialize()
 	{
+		ImQuick::InitializeWindow(IMQ_DEFAULT_WND_NAME, IMQ_DEFAULT_WND_CAT);
+
 		RegisterFunction<float>(std::bind(&ImQuickRender::Render_TypeFloat, std::placeholders::_1, std::placeholders::_2));
 		RegisterFunction<bool>(std::bind(&ImQuickRender::Render_TypeBool, std::placeholders::_1, std::placeholders::_2));
 		RegisterFunction<char>(std::bind(&ImQuickRender::Render_TypeConstChar, std::placeholders::_1, std::placeholders::_2));
