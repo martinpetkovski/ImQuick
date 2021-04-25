@@ -64,6 +64,8 @@ namespace ImQuick
 
 	struct SImQuickProperty
 	{
+		std::string name;
+		std::string label;
 		std::type_index paramType = std::type_index(typeid(int));
 		void* param = nullptr;
 		SImQuickWindow* wnd;
@@ -74,7 +76,7 @@ namespace ImQuick
 	struct SImQuickContext
 	{
 		std::unordered_map<std::type_index, std::function<void(const char*, void*)>> mTypeRenderFunctionMap;
-		std::unordered_map<std::string, SImQuickProperty> mPropertyMap;
+		std::vector<SImQuickProperty> mPropertyMap;
 		std::vector<SImQuickWindow> mWindowsMap;
 		std::vector<void*> mVariablePool;
 		bool mIsRenderMainMenu = true;
@@ -182,31 +184,32 @@ namespace ImQuick
 	void RegisterProperty(
 		const std::string& name,
 		T* param,
+		const std::string& label = "",
 		const std::string& wndName = IMQ_DEFAULT_WND_NAME)
 	{
 		IM_ASSERT(gImQuickContext);
 
 		SImQuickProperty typeProperty;
+		typeProperty.name = name;
+		if (label == "")
+			typeProperty.label = name;
+		else
+			typeProperty.label = label;
+
 		typeProperty.paramType = std::type_index(typeid(*param));
 		typeProperty.param = param;
 
 		auto wndIt = GetWindow(wndName);
-		if (wndIt)
-		{
-			typeProperty.wnd = wndIt;
-		}
-		else
-		{
-			InitializeWindow(wndName);
-			typeProperty.wnd = GetWindow(wndName);
-		}
+		IM_ASSERT(wndIt); // Initialize the window before assigning it to a property
 
-		gImQuickContext->mPropertyMap.insert_or_assign(name, typeProperty);
+		typeProperty.wnd = wndIt;
+		gImQuickContext->mPropertyMap.push_back(typeProperty);
 	}
 
 	template<typename T>
 	void RegisterProperty(
 		const std::string& name,
+		const std::string& label = "",
 		const std::string& wndName = IMQ_DEFAULT_WND_NAME)
 	{
 		IM_ASSERT(gImQuickContext);
@@ -214,29 +217,21 @@ namespace ImQuick
 		T* param = new T();
 		gImQuickContext->mVariablePool.push_back(param);
 
-		SImQuickProperty typeProperty;
-		typeProperty.paramType = std::type_index(typeid(*param));
-		typeProperty.param = param;
-
-		auto wndIt = GetWindow(wndName);
-		if (wndIt)
-		{
-			typeProperty.wnd = wndIt;
-		}
-		else
-		{
-			InitializeWindow(wndName);
-			typeProperty.wnd = GetWindow(wndName);
-		}
-
-		gImQuickContext->mPropertyMap.insert_or_assign(name, typeProperty);
+		RegisterProperty<T>(name, param, label, wndName);
 	}
 
 	inline void RemoveProperty(const std::string& name)
 	{
 		IM_ASSERT(gImQuickContext);
 
-		gImQuickContext->mPropertyMap.erase(name);
+		auto propertyIt = gImQuickContext->mPropertyMap.begin();
+		while (propertyIt != gImQuickContext->mPropertyMap.end())
+		{
+			if (propertyIt->name == name)
+				break;
+		}
+
+		gImQuickContext->mPropertyMap.erase(propertyIt);
 	}
 
 	template<typename T>
@@ -250,24 +245,38 @@ namespace ImQuick
 		RegisterProperty<T>(newName, param, wndName);
 	}
 
-	template<typename T>
-	T* GetProperty(const std::string& name)
+	inline SImQuickProperty* GetProperty(const std::string& name)
 	{
 		IM_ASSERT(gImQuickContext);
-		T* retVal = nullptr;
-		const auto& paramIt = gImQuickContext->mPropertyMap.find(name);
-		if (paramIt != gImQuickContext->mPropertyMap.end())
+		SImQuickProperty* retVal = nullptr;
+
+		for (auto& propertyIt : gImQuickContext->mPropertyMap)
 		{
-			retVal = reinterpret_cast<T*>(paramIt->second.param);
+			if (propertyIt.name == name)
+				retVal = &propertyIt;
 		}
 
 		return retVal;
 	}
 
 	template<typename T>
-	T* SetProperty(const std::string& name, const T& value)
+	T* GetPropertyValue(const std::string& name)
 	{
-		const auto& param = GetProperty<T>(name);
+		IM_ASSERT(gImQuickContext);
+		T* retVal = nullptr;
+		const auto& paramIt = GetProperty(name);
+		if (paramIt)
+		{
+			retVal = reinterpret_cast<T*>(paramIt->param);
+		}
+
+		return retVal;
+	}
+
+	template<typename T>
+	T* SetPropertyValue(const std::string& name, const T& value)
+	{
+		const auto& param = GetPropertyValue<T>(name);
 		IM_ASSERT(param)
 		
 		*param = T(value);
@@ -300,16 +309,16 @@ namespace ImQuick
 		auto& properties = gImQuickContext->mPropertyMap;
 		for (auto& propertyIt : properties)
 		{
-			IM_ASSERT(propertyIt.second.wnd);
-			if (!propertyIt.second.wnd->isOpen)
+			IM_ASSERT(propertyIt.wnd);
+			if (!propertyIt.wnd->isOpen)
 				continue;
 
-			auto propRenderFuncIt = gImQuickContext->mTypeRenderFunctionMap.find(propertyIt.second.paramType);
+			auto propRenderFuncIt = gImQuickContext->mTypeRenderFunctionMap.find(propertyIt.paramType);
 			IM_ASSERT(propRenderFuncIt != gImQuickContext->mTypeRenderFunctionMap.end()); // unsupported type, render function not found
-			const char* label = propertyIt.first.c_str();
-			void* value = propertyIt.second.param;
+			const char* label = propertyIt.label.c_str();
+			void* value = propertyIt.param;
 
-			if (ImGui::Begin(propertyIt.second.wnd->name.c_str(), &propertyIt.second.wnd->isOpen))
+			if (ImGui::Begin(propertyIt.wnd->name.c_str(), &propertyIt.wnd->isOpen))
 			{
 				propRenderFuncIt->second(label, value);
 				ImGui::End();
