@@ -1,3 +1,28 @@
+//
+//			The MIT License(MIT)
+//			
+//			Copyright(c) 2021 Martin Petkovski
+//			
+//			Permission is hereby granted, free of charge, to any person obtaining a copy
+//			of this softwareand associated documentation files(the "Software"), to deal
+//			in the Software without restriction, including without limitation the rights
+//			to use, copy, modify, merge, publish, distribute, sublicense, and /or sell
+//			copies of the Software, and to permit persons to whom the Software is
+//			furnished to do so, subject to the following conditions :
+//			
+//			The above copyright noticeand this permission notice shall be included in all
+//			copies or substantial portions of the Software.
+//			
+//			THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//			IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//			FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+//			AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//			LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//			OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//			SOFTWARE.
+//
+//			VERSION 2021.4.1
+
 #pragma once
 
 #include "imgui.h"
@@ -110,18 +135,6 @@ namespace ImQuick
 		gImQuickContext->mTypeRenderFunctionMap.insert_or_assign(std::type_index(typeid(T)), function);
 	}
 
-	inline void Initialize()
-	{
-		ImQuick::InitializeWindow(IMQ_DEFAULT_WND_NAME, IMQ_DEFAULT_WND_CAT);
-
-		RegisterFunction<float>(std::bind(&ImQuickRender::Render_TypeFloat, std::placeholders::_1, std::placeholders::_2));
-		RegisterFunction<bool>(std::bind(&ImQuickRender::Render_TypeBool, std::placeholders::_1, std::placeholders::_2));
-		RegisterFunction<char>(std::bind(&ImQuickRender::Render_TypeConstChar, std::placeholders::_1, std::placeholders::_2));
-		RegisterFunction<double>(std::bind(&ImQuickRender::Render_TypeDouble, std::placeholders::_1, std::placeholders::_2));
-		RegisterFunction<int>(std::bind(&ImQuickRender::Render_TypeInt, std::placeholders::_1, std::placeholders::_2));
-	}
-
-
 	inline SImQuickWindow* GetWindow(const std::string name)
 	{
 		IM_ASSERT(gImQuickContext);
@@ -138,6 +151,7 @@ namespace ImQuick
 		return retVal;
 	}
 
+
 	inline void InitializeWindow(const std::string& wndName, const std::string& catName = IMQ_DEFAULT_WND_CAT)
 	{
 		IM_ASSERT(gImQuickContext);
@@ -152,6 +166,17 @@ namespace ImQuick
 		wnd.category = catName;
 
 		gImQuickContext->mWindowsMap.push_back(wnd);
+	}
+
+	inline void Initialize()
+	{
+		ImQuick::InitializeWindow(IMQ_DEFAULT_WND_NAME, IMQ_DEFAULT_WND_CAT);
+
+		RegisterFunction<float>(std::bind(&ImQuickRender::Render_TypeFloat, std::placeholders::_1, std::placeholders::_2));
+		RegisterFunction<bool>(std::bind(&ImQuickRender::Render_TypeBool, std::placeholders::_1, std::placeholders::_2));
+		RegisterFunction<char>(std::bind(&ImQuickRender::Render_TypeConstChar, std::placeholders::_1, std::placeholders::_2));
+		RegisterFunction<double>(std::bind(&ImQuickRender::Render_TypeDouble, std::placeholders::_1, std::placeholders::_2));
+		RegisterFunction<int>(std::bind(&ImQuickRender::Render_TypeInt, std::placeholders::_1, std::placeholders::_2));
 	}
 
 	inline void SetWindowState(const std::string& wndName, bool isOpen)
